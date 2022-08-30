@@ -321,6 +321,102 @@ const getMyCurrentWorkingHours = async (userId: string): Promise<number> => {
   return totalAta;
 };
 
+router.get("/user/:userId/my-team", async (req: Request, res: Response) => {
+  try {
+    if (
+      !req.params["userId"] ||
+      req.params["userId"] == "" ||
+      req.params["userId"] == null ||
+      req.params["userId"] == undefined
+    ) {
+      res.status(400).json({ message: "userid is required" });
+      return;
+    }
+
+    var userList = await getMyTeam(req.params["userId"] as string);
+    if (!userList) {
+      return res.status(400).json({ message: "user not found" });
+    }
+
+    userList?.reportings?.remove(req.params["userId"] as string);
+
+    await getTeamData(userList).then(async (teamData) => {
+      await getAttendance(userList.reportings).then((attendanceResult) => {
+        const result = teamData.map((singleTeamData) => {
+          const similarData = attendanceResult.find(
+            (singleAttendanceResult: any) =>
+              singleAttendanceResult.microsoftUserID === singleTeamData.userId
+          );
+          if (similarData !== undefined) {
+            singleTeamData = {
+              ...singleTeamData,
+              ...{ attendanceStatus: similarData.attendance_status },
+            };
+          } else {
+            singleTeamData = {
+              ...singleTeamData,
+              ...{ attendanceStatus: "Not Filled" },
+            };
+          }
+          return singleTeamData;
+        });
+        res.status(200).json({ data: result });
+      });
+    });
+  } catch (error) {
+    Rollbar.error(error as unknown as Error, req);
+    res.status(500).json({ message: (error as unknown as Error).message });
+  }
+});
+
+async function getTeamData(userList: any) {
+  var userData: any[] = [];
+  for (let element of userList.reportings) {
+    var userList = await getMyTeam(element);
+    userData.push(userList);
+  }
+
+  return userData;
+}
+
+async function getMyTeam(userId: string) {
+  try {
+    var query = {
+      userId: userId,
+    };
+    var result: any = await microsoftUser.findOne(query);
+    const reporter: any = await microsoftUser.findOne({
+      userId: result.managerId,
+    });
+
+    return { ...result._doc, ...{ reporter_name: reporter.name } };
+  } catch (error: any) {
+    return { message: error.message };
+  }
+}
+
+async function getAttendance(userId: Array<string>) {
+  try {
+    var query = {
+      microsoftUserID: { $in: userId },
+      date: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+    };
+
+    // var result = await attendanceSchema.find(query);
+    var result: any = [
+      {
+        _id: "630defb285b15e6c2d428cfd",
+        microsoftUserID: "4853e42e-0927-4daa-987a-a361c83fb6be",
+        __v: 0,
+        attendance_status: "Working",
+      },
+    ];
+    return result;
+  } catch (error: any) {
+    return [];
+  }
+}
+
 // function to get a sepcific user detail
 async function getUserById(id: String): Promise<MicrosoftUser | null> {
   var queryResult = await microsoftUser.findOne({
