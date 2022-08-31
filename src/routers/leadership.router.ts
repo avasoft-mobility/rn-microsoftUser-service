@@ -9,6 +9,11 @@ router.get("/", async (req: Request, res: Response) => {
     const { userId } = req.query;
     if (userId) {
       const result = await getAttendanceByUserId(userId.toString());
+      if (!result) {
+        return res.status(400).json({
+          response: "Couldn't find leadership details for this userId",
+        });
+      }
       return res.status(200).json({ response: result });
     }
     if (!userId) {
