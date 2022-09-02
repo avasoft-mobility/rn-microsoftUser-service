@@ -28,7 +28,7 @@ router.post("/attendance", (req, res) => {
 });
 
 // Get a specific user detail
-router.get("/users/:userId", (req: Request, res: Response) => {
+router.get("/:userId", async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
@@ -37,9 +37,15 @@ router.get("/users/:userId", (req: Request, res: Response) => {
       return;
     }
 
-    getUserById(userId.toString()).then((result) => {
-      res.status(200).json({ data: result });
-    });
+    const result = await getUserById(userId.toString());
+    if (!result) {
+      return res
+        .status(400)
+        .json({ message: "User for the given userId was not found" });
+    }
+    if (result) {
+      return res.status(200).json({ data: result });
+    }
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
     res.status(500).json({ message: (error as unknown as Error).message });
@@ -128,9 +134,8 @@ router.get("/:userId/statistics", (req: Request, res: Response) => {
       res.status(400).json({ message: "userid is required" });
       return;
     }
-    getStats(req.params["userid"]).then((_) => {
-      res.status(200).json(_);
-    });
+    const result = getStats(req.params["userid"]);
+    return res.status(200).json({ data: result });
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
     res.status(500).json({ message: (error as unknown as Error).message });
