@@ -8,6 +8,7 @@ import Todo from "../models/todo.model";
 import MyStats from "../models/myStats.model";
 import TeamStats from "../models/teamStats.model";
 import MicrosoftUser from "../models/microsoftUser.model";
+import AttendanceModel from "../models/Attendance.model";
 
 const router = express.Router();
 
@@ -321,7 +322,7 @@ const getMyCurrentWorkingHours = async (userId: string): Promise<number> => {
   return totalAta;
 };
 
-router.get("/user/:userId/my-team", async (req: Request, res: Response) => {
+router.get("/:userId/my-team", async (req: Request, res: Response) => {
   try {
     if (
       !req.params["userId"] ||
@@ -340,36 +341,40 @@ router.get("/user/:userId/my-team", async (req: Request, res: Response) => {
 
     userList?.reportings?.remove(req.params["userId"] as string);
 
-    await getTeamData(userList).then(async (teamData) => {
-      await getAttendance(userList.reportings).then((attendanceResult) => {
-        const result = teamData.map((singleTeamData) => {
-          const similarData = attendanceResult.find(
-            (singleAttendanceResult: any) =>
-              singleAttendanceResult.microsoftUserID === singleTeamData.userId
-          );
-          if (similarData !== undefined) {
-            singleTeamData = {
-              ...singleTeamData,
-              ...{ attendanceStatus: similarData.attendance_status },
-            };
-          } else {
-            singleTeamData = {
-              ...singleTeamData,
-              ...{ attendanceStatus: "Not Filled" },
-            };
-          }
-          return singleTeamData;
-        });
-        res.status(200).json({ data: result });
-      });
-    });
+    const teamData: any[] = await getTeamData(userList);
+
+    const attendanceResult: AttendanceModel[] = await getAttendance(
+      userList.reportings
+    );
+
+    var result: any[] = [];
+    for (let singleTeamData of teamData) {
+      const similarData = attendanceResult.find(
+        (singleAttendanceResult) =>
+          singleAttendanceResult.microsoftUserID === singleTeamData.userId
+      );
+      if (similarData !== undefined) {
+        singleTeamData = {
+          ...singleTeamData,
+          ...{ attendanceStatus: similarData.attendance_status },
+        };
+      } else {
+        singleTeamData = {
+          ...singleTeamData,
+          ...{ attendanceStatus: "Not Filled" },
+        };
+      }
+      result.push(singleTeamData);
+    }
+
+    res.status(200).json({ data: result });
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
     res.status(500).json({ message: (error as unknown as Error).message });
   }
 });
 
-async function getTeamData(userList: any) {
+const getTeamData = async (userList: any) => {
   var userData: any[] = [];
   for (let element of userList.reportings) {
     var userList = await getMyTeam(element);
@@ -377,9 +382,9 @@ async function getTeamData(userList: any) {
   }
 
   return userData;
-}
+};
 
-async function getMyTeam(userId: string) {
+const getMyTeam = async (userId: string) => {
   try {
     var query = {
       userId: userId,
@@ -393,7 +398,7 @@ async function getMyTeam(userId: string) {
   } catch (error: any) {
     return { message: error.message };
   }
-}
+};
 
 async function getAttendance(userId: Array<string>) {
   try {
