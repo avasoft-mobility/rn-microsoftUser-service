@@ -10,17 +10,17 @@ router.get("/", async (req: Request, res: Response) => {
     if (userId) {
       const result = await getLeaderShipByUserId(userId.toString());
       if (!result) {
-        return res.status(400).json({
+        return res.status(400).send({
           response: "Couldn't find leadership details for this userId",
         });
       }
-      return res.status(200).json({ response: result });
+      return res.status(200).send({ response: result });
     }
     const result = await getAllLeaderShip();
-    return res.status(200).json({ response: result });
+    return res.status(200).send(result);
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
-    res.status(500).json({ message: (error as unknown as Error).message });
+    res.status(500).send({ message: (error as unknown as Error).message });
   }
 });
 
