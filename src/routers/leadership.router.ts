@@ -11,10 +11,10 @@ router.get("/", async (req: Request, res: Response) => {
       const result = await getLeaderShipByUserId(userId.toString());
       if (!result) {
         return res.status(400).send({
-          response: "Couldn't find leadership details for this userId",
+          message: "Couldn't find leadership details for this userId",
         });
       }
-      return res.status(200).send({ response: result });
+      return res.status(200).send(result);
     }
     const result = await getAllLeaderShip();
     return res.status(200).send(result);
