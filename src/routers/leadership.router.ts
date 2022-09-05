@@ -8,7 +8,7 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
     if (userId) {
-      const result = await getAttendanceByUserId(userId.toString());
+      const result = await getLeaderShipByUserId(userId.toString());
       if (!result) {
         return res.status(400).json({
           response: "Couldn't find leadership details for this userId",
@@ -16,24 +16,22 @@ router.get("/", async (req: Request, res: Response) => {
       }
       return res.status(200).json({ response: result });
     }
-    if (!userId) {
-      const result = await getAllAttendance();
-      return res.status(200).json({ response: result });
-    }
+    const result = await getAllLeaderShip();
+    return res.status(200).json({ response: result });
   } catch (error) {
     Rollbar.error(error as unknown as Error, req);
     res.status(500).json({ message: (error as unknown as Error).message });
   }
 });
 
-const getAttendanceByUserId = async (userId: string) => {
+const getLeaderShipByUserId = async (userId: string) => {
   var result = await LeaderShip.findOne({
     microsoftUserId: userId,
   });
   return result;
 };
 
-const getAllAttendance = async () => {
+const getAllLeaderShip = async () => {
   var result = await LeaderShip.find();
   return result;
 };
