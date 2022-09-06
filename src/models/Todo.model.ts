@@ -1,6 +1,13 @@
-import Tag from "./Tag.model";
+interface Tag {
+  _id: string;
+  microsoftUserId?: string;
+  tagName: string;
+  type?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-interface Todo {
+interface GraphTodo {
   _id: string;
   userId: string;
   microsoftUserId: string;
@@ -16,4 +23,4 @@ interface Todo {
   __v: number;
 }
 
-export default Todo;
+export { GraphTodo, Tag };
