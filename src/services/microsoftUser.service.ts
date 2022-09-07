@@ -26,17 +26,25 @@ const getMyTeamReport = async (userId: string): Promise<Response> => {
   );
 
   let reportingsDetail = await getMultipleMicrosoftUser(currentUser.reportings);
+
+  console.log("reportingsDetail", reportingsDetail);
+
   let reportingsAttendance = await getMicrosoftUsersAttendance(
     currentUser.reportings
   );
 
-  console.log("reportingsAttendance", reportingsAttendance);
+  if (reportingsAttendance) {
+    reportingUsers = mapUsersWithAttendance(
+      reportingsDetail,
+      reportingsAttendance
+    );
 
-  reportingUsers = mapUsersWithAttendance(
-    reportingsDetail,
-    reportingsAttendance
-  );
-  reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
+    reportingUsers = mapUsersWithReporterName(reportingUsers, currentUser);
+  }
+
+  if (!reportingsAttendance) {
+    reportingUsers = mapUsersWithReporterName(reportingsDetail, currentUser);
+  }
 
   return { code: 200, message: "success", body: reportingUsers };
 };
